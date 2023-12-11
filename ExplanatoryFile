@@ -1,0 +1,135 @@
+TASK CONTROLLER
+/*
+return a json response of all the Task objects:
+    -return response()->json(Task::all());
+
+return all Task objects as a collection in the format indicated in task resource
+    -return new TaskCollection(Task::all());
+
+return a single Task model/resource using the Task Resource class
+    Within the apiResource route, for the "show" method we will pass the task id to it,
+    we will use the laravel model binding to automatically inject the model task into our controller action
+    Will automatically fetch the particular $task object from the database
+        -return new TaskResource($task);
+
+NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollection)
+ although you create both of them using make:resource command.
+ Changes are made to the format which the object is shown in the TaskResource
+
+
+     public function show(Request $request, Task $task)
+     {
+         return new TaskResource($task);
+     }
+         - this function returns a single task resource,
+         - to call this,you'll have to
+         - indicate the particular task (task id) in the request url (eg 'tasks\1)
+         - we use the laravel route model binding to automatically inject task model into the "show" method, retrieve and return it from the database
+
+     public function store(Request $request)
+     {
+         $validated = $request->validate([
+             'title'=>'required|max:255',
+             'is_done' => 'sometimes'
+         ]);
+
+         $task = Task::create($validated);
+         return new TaskResource($task);
+    }
+
+       - this function allows the user to create their own tasks from and store on the database (POST)
+       - the laravel validate and validates resources is used to validate/check whether the values submitted by the user are correct
+       - according to the validation requirement(rules) provided
+       - create a new task from the validated entity, and send a response in the TaskResource format to the user
+
+       - the 'sometimes' validation method means: if
+       - if 'is_done' is not given or indicated in the request body, don't check it
+       - else if 'is_done' field is indicated but there's no value assigned to it, show an error.
+       - in our case we have made 'is_done' nullable and given it a default value so we might not have need for this
+
+       Additional explanation:
+       instead of $task = Task::create($validated), we can do:
+       Method One
+            $task = new Task();
+            $task->title = $validated->title;
+            $task->is_done = $validated->is_done;
+            $task->save();
+
+       Method Two
+            $task = new Task();
+            $task->title = $requested->input('title');
+            $task->is_done = $requested->input('is_done');
+            $task->save();
+
+       Method Three (unsure)
+            $task = Task::create($request->all());
+
+
+*/
+
+
+
+
+
+
+
+
+TASK MODEL
+/*
+    protected $fillable = [
+        'title', 'is_done'
+    ];
+    //fillables are useful to indicate the fields in a model or resource,
+    //as well as restrict the fields that can be set using a mass assignment
+    //is an array as well
+
+
+    protected $casts = [
+      'is_done' => 'boolean'
+    ];
+    /*
+     *use built in $casts variable to typecast the field being shown in the view
+     * make sure the value seen on view is shown as actual boolean not 0 or 1
+     * if you don't do this 'is_done' will be viewed as 0 or 1 even though it's a boolean value
+     */
+
+
+    //you can use the $hidden built-in variable to hide certain fields
+    protected $hidden = [
+        'updated_at',
+    ];
+
+*/
+
+
+
+MIGRATIONS
+/*
+      $table->boolean('is_done')->default(false);
+  -This creates a field in the model table called 'is_done', and assigns it a default value of 0
+
+      $table->boolean('is_done')->nullable()->change();
+  -nullable()->change(0) is used to indicate that a field on the database should be nullable (can be zero or unassigned)
+
+  Together, we can set the default value to false, hence
+    the 'is_done' field can be nullable and if it is,
+    we assign it the default value false.
+*/
+
+
+
+TASK RESOURCE
+/*
+  $data = parent::toArray($request);
+       converts request body to array
+
+  $data['status'] = $this->is_done ? 'finished':'open';
+       returns a 'status' field as well as 'is_done' field
+       which stores and displays a text on condition using the content of 'is_done' field
+       if is_done is true,status:finished   else,status:open
+ */
+
+
+
+
+

@@ -21,12 +21,3 @@ class TaskResource extends JsonResource
 }
 
 
-/*
- * $data = parent::toArray($request);
- *      converts request body to array
- *
- * $data['status'] = $this->is_done ? 'finished':'open';
- *      returns a 'status' field as well as 'is_done' field
- *      which stores and displays a text on condition using the content of 'is_done' field
- *      if is_done is true,status:finished   else,status:open
- */

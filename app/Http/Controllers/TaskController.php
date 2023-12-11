@@ -3,27 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\TaskCollection;
+use App\Http\Resources\TaskResource;
 use App\Models\Task;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
+    //this function returns a list of all task resources/models
     public function index(Request $request)
     {
         return new TaskCollection(Task::all());
     }
+
+
+    //returns a single task resource
+    public function show(Request $request, Task $task)
+    {
+        return new TaskResource($task);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title'=>'required|max:255',
+        ]);
+
+        $task = Task::create($validated);
+        return new TaskResource($task);
+    }
+
 }
 
-/*
-return a json response of all the Task objects:
-    -return response()->json(Task::all());
 
-return all Task objects as a collection in the format indicated in task resource
-    -return new TaskCollection(Task::all());
-
-NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollection)
- although you create both of them using make:resource command.
- Changes are made to the format which the object is shown in the TaskResource
-*/
 
 
