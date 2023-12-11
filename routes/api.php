@@ -21,10 +21,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 //we do this:
 Route::apiResource('tasks', TaskController::class)->only([
-    'index', 'show', 'store'
+    'index', 'show', 'store', 'update', 'destroy'
 ]);
 
 
 
 //instead of this:
-//Route::get('tasks', [TaskController::class, 'index']);
+

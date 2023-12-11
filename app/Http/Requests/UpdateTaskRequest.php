@@ -4,14 +4,13 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreTaskRequest extends FormRequest
+class UpdateTaskRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        //normally, this will only be true on the condition that the user has the required credentials or permissions
         return true;
     }
 
@@ -23,7 +22,8 @@ class StoreTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'=>'required|max:255',
+            'title' => 'sometimes|required|max:255',
+            'is_done' => 'sometimes|boolean'
         ];
     }
 }

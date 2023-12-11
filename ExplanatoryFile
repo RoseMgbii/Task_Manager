@@ -16,7 +16,26 @@ NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollecti
  although you create both of them using make:resource command.
  Changes are made to the format which the object is shown in the TaskResource
 
+*/
 
+
+
+
+LARAVEL MODEL FACTORY
+    - Laravel Model factories define database records in a predictable and easily replicable way
+        so that your app tests are consistent and controlled.
+    - Model factories define a set of default attributes for each of your Eloquent models.
+    - They are used to create fake/dummy records you can use to populate your database.
+
+    - Create the Model Factory and within, indicate the fields you values in when creating fake records
+    - Go to database (recommended "php artisan tinker")
+    - and using the factory method, indicate the number of records you want and then create (Task::factory(50)->create())
+
+
+
+GETTING TASK(s)
+/*
+*Get a specific task:
      public function show(Request $request, Task $task)
      {
          return new TaskResource($task);
@@ -32,7 +51,14 @@ NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollecti
              'title'=>'required|max:255',
              'is_done' => 'sometimes'
          ]);
+         $task = Task::create($validated);
+         return new TaskResource($task);
+    }
 
+  OR(when validating in the request):
+     public function store(StoreTaskRequest $request)
+     {
+         $validated = $request->validate();
          $task = Task::create($validated);
          return new TaskResource($task);
     }
@@ -42,10 +68,15 @@ NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollecti
        - according to the validation requirement(rules) provided
        - create a new task from the validated entity, and send a response in the TaskResource format to the user
 
-       - the 'sometimes' validation method means: if
-       - if 'is_done' is not given or indicated in the request body, don't check it
-       - else if 'is_done' field is indicated but there's no value assigned to it, show an error.
-       - in our case we have made 'is_done' nullable and given it a default value so we might not have need for this
+       - validate() can be used to perform validation and validated() to get validated data.
+       - I believe you can use validate() for both,
+       - however using each should insulate you from potential future changes to the validate() function (if it were, say, changed to return a true/false instead) and result in slightly more readable code.
+       - In the case we use validated(), it is because we are validating the data in the request (e.g: StoreTaskRequest)
+
+       - the 'sometimes' validation means that we can leave the specified field out of the request and only validate it when it is present.
+       - hence: if 'is_done' is not given or indicated in the request body, don't check it
+       - else validate it against the requirements given
+       - in our case we made 'is_done' nullable and gave it a default value so we might have no need for this
 
        Additional explanation:
        instead of $task = Task::create($validated), we can do:
@@ -64,12 +95,24 @@ NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollecti
        Method Three (unsure)
             $task = Task::create($request->all());
 
-
 */
 
 
 
+PAGINATING COLLECTIONS
+Eg: when we get all tasks in the database (in the index method)
+    it is returned as a collection (with sometimes thousand of records)
+    Fetching these can get be slow and heavy on the database
+    To remedy this, we can paginate the collection such that
+    Instead of returning all the tasks at once, A number of tasks are returned per each page.
+    And links to other pages are indicated below as well.
+    To achieve this, instead of Task::all(), do Task::paginate();
 
+
+
+
+FILTERING TASK COLLECTION
+Like querying the list/collection, and fetching records which meet particular conditions
 
 
 
@@ -79,20 +122,18 @@ TASK MODEL
     protected $fillable = [
         'title', 'is_done'
     ];
-    //fillables are useful to indicate the fields in a model or resource,
-    //as well as restrict the fields that can be set using a mass assignment
-    //is an array as well
+    - fillables are useful to indicate the fields in a model or resource,
+    - as well as restrict the fields that can be set using a mass assignment
+    - is an array as well
 
 
     protected $casts = [
       'is_done' => 'boolean'
     ];
-    /*
-     *use built in $casts variable to typecast the field being shown in the view
-     * make sure the value seen on view is shown as actual boolean not 0 or 1
-     * if you don't do this 'is_done' will be viewed as 0 or 1 even though it's a boolean value
-     */
 
+     - use built in $casts variable to typecast the field being shown in the view
+     - make sure the value seen on view is shown as actual boolean not 0 or 1
+     - if you don't do this 'is_done' will be viewed as 0 or 1 even though it's a boolean value
 
     //you can use the $hidden built-in variable to hide certain fields
     protected $hidden = [
@@ -100,6 +141,21 @@ TASK MODEL
     ];
 
 */
+
+
+
+
+DELETING TASKS
+/*
+  $task->delete(); simply removes the specific task from the database
+
+  Doing: return response()->json(["message"=>"Task successfully deleted Task from database"]);
+    - will send a response in json format, showing the given message.
+
+  Whilst this: return response()->noContent();
+    - will send/respond the necessary status code (in this case 204)
+*/
+
 
 
 
@@ -118,6 +174,7 @@ MIGRATIONS
 
 
 
+
 TASK RESOURCE
 /*
   $data = parent::toArray($request);
@@ -130,6 +187,25 @@ TASK RESOURCE
  */
 
 
+
+
+API ROUTES
+/*
+        Route::apiResource('tasks', TaskController::class)->only([
+            'index', 'show', 'store', 'update'
+        ]);
+        - This shows that the laravel apiResource should only send requests to the indicated methods
+        - Other ways to handle this includes:
+        Removing the 'only' method:
+          Route::apiResource('tasks', TaskController::class)
+
+        Establishing api routes for each action:
+         Route::get('tasks', [TaskController::class, 'index']);
+         Route::get('tasks/{id}', [TaskController::class, 'show']);
+         Route::post('tasks', [TaskController::class, 'store']);
+         Route::put('tasks', [TaskController::class, 'update']);
+         Route::delete('tasks', [TaskController::class, 'destroy']);
+*/
 
 
 

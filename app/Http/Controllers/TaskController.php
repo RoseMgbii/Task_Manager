@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskCollection;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
@@ -12,24 +14,32 @@ class TaskController extends Controller
     //this function returns a list of all task resources/models
     public function index(Request $request)
     {
-        return new TaskCollection(Task::all());
+        return new TaskCollection(Task::paginate());
     }
 
-
-    //returns a single task resource
     public function show(Request $request, Task $task)
     {
         return new TaskResource($task);
     }
 
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $validated = $request->validate([
-            'title'=>'required|max:255',
-        ]);
-
+        $validated = $request->validated();
         $task = Task::create($validated);
         return new TaskResource($task);
+    }
+
+    public function update(UpdateTaskRequest $request, Task $task)
+    {
+        $validated = $request->validated();
+        $task->update($validated);
+        return new TaskResource($task);
+    }
+
+    public function destroy(Request $request, Task $task)
+    {
+        $task->delete();
+        return response()->noContent();
     }
 
 }
