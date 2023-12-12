@@ -1,3 +1,9 @@
+DIFFERENCE BETWEEN A MODEL AND A MODEL RESOURCE
+    - A “model” is used to store data, and perhaps performs some business logics against that data.
+    - A “resource model” is used to interact with the database (or maybe other types of persistent data) on behalf of the “model”. The “resource model” actually performs the CRUD operations
+
+
+
 TASK CONTROLLER
 /*
 return a json response of all the Task objects:
@@ -6,10 +12,9 @@ return a json response of all the Task objects:
 return all Task objects as a collection in the format indicated in task resource
     -return new TaskCollection(Task::all());
 
-return a single Task model/resource using the Task Resource class
-    Within the apiResource route, for the "show" method we will pass the task id to it,
-    we will use the laravel model binding to automatically inject the model task into our controller action
-    Will automatically fetch the particular $task object from the database
+return a single Task model/resource in the format indicated in the Task Resource class
+we will use the laravel model binding to automatically inject the model task into our controller action
+Will automatically fetch the particular $task object from the database
         -return new TaskResource($task);
 
 NB: TaskResource(JsonResource) is different from TaskCollection(ResourceCollection)
@@ -27,14 +32,14 @@ LARAVEL MODEL FACTORY
     - Model factories define a set of default attributes for each of your Eloquent models.
     - They are used to create fake/dummy records you can use to populate your database.
 
-    - Create the Model Factory and within, indicate the fields you values in when creating fake records
+    - Create the Model Factory and within, indicate the fields you would like to see when creating fake records
     - Go to database (recommended "php artisan tinker")
-    - and using the factory method, indicate the number of records you want and then create (Task::factory(50)->create())
+    - and using the factory method, indicate the number of records you want and then create them
+        (for php tinker use this code Task::factory(50)->create())
 
 
 
 GETTING TASK(s)
-/*
 *Get a specific task:
      public function show(Request $request, Task $task)
      {
@@ -68,10 +73,10 @@ GETTING TASK(s)
        - according to the validation requirement(rules) provided
        - create a new task from the validated entity, and send a response in the TaskResource format to the user
 
-       - validate() can be used to perform validation and validated() to get validated data.
-       - I believe you can use validate() for both,
+       - validate() can be used to perform validation and validated() is used to get validated data.
+       - I believe you can use validate() as default (when using Request $request),
        - however using each should insulate you from potential future changes to the validate() function (if it were, say, changed to return a true/false instead) and result in slightly more readable code.
-       - In the case we use validated(), it is because we are validating the data in the request (e.g: StoreTaskRequest)
+       - In this case, we use validated() because we are getting the already validated data, which was validated in the StoreTaskRequest
 
        - the 'sometimes' validation means that we can leave the specified field out of the request and only validate it when it is present.
        - hence: if 'is_done' is not given or indicated in the request body, don't check it
@@ -95,17 +100,18 @@ GETTING TASK(s)
        Method Three (unsure)
             $task = Task::create($request->all());
 
-*/
+
 
 
 
 PAGINATING COLLECTIONS
 Eg: when we get all tasks in the database (in the index method)
     it is returned as a collection (with sometimes thousand of records)
-    Fetching these can get be slow and heavy on the database
+    Fetching these can be slow and heavy/tasking for the database.
+
     To remedy this, we can paginate the collection such that
     Instead of returning all the tasks at once, A number of tasks are returned per each page.
-    And links to other pages are indicated below as well.
+    And links to other pages (including first, last, next, and previous pages) are indicated as well.
     To achieve this, instead of Task::all(), do Task::paginate();
 
 
@@ -113,12 +119,18 @@ Eg: when we get all tasks in the database (in the index method)
 
 FILTERING TASK COLLECTION
 Like querying the list/collection, and fetching records which meet particular conditions
+    NB: In our case, we installed the Spatie QueryBuilder fxnality from the terminal using "composer require spatie/laravel-query-builder" and imported it to our TaskController
+     $tasks = QueryBuilder::for(Task::class)
+                ->allowedFilters('is_done')
+                ->paginate();
+     - This means, using the QueryBuilder for the task class,
+     - make the allowed field used to query/filter the collection be the 'is_done' field
+     - then paginate the results of the query
 
 
 
 
 TASK MODEL
-/*
     protected $fillable = [
         'title', 'is_done'
     ];
@@ -140,57 +152,57 @@ TASK MODEL
         'updated_at',
     ];
 
-*/
 
 
 
 
 DELETING TASKS
-/*
-  $task->delete(); simply removes the specific task from the database
+  $task->delete(); removes the specific task from the database
 
   Doing: return response()->json(["message"=>"Task successfully deleted Task from database"]);
     - will send a response in json format, showing the given message.
 
   Whilst this: return response()->noContent();
     - will send/respond the necessary status code (in this case 204)
-*/
 
 
 
 
 MIGRATIONS
-/*
+
+NB: the command "php artisan migrate:fresh" drops all the tables and runs the migrations from the start (removes all data)
+
       $table->boolean('is_done')->default(false);
   -This creates a field in the model table called 'is_done', and assigns it a default value of 0
 
       $table->boolean('is_done')->nullable()->change();
-  -nullable()->change(0) is used to indicate that a field on the database should be nullable (can be zero or unassigned)
-
-  Together, we can set the default value to false, hence
+  -nullable()->change() is used to indicate that a field on the database should have features allowing it to be nullable (can be zero or unassigned)
+  Using these Together, like so: $table->boolean('is_done')->default(false)->nullable()->change();
+    we can set the default value to false, hence
     the 'is_done' field can be nullable and if it is,
-    we assign it the default value false.
-*/
+    we assign it the default value false
+
+     $table->foreignId('creator_id')->constrained('users');
+  - this creates a field in the database called creator_id which acts as a foreign key to connect the task and users table
+  - the "constrained" clause adds some constraints on the users table,
+  - preventing the addition of an already exising user_id to this table, and providing some extra security
+
 
 
 
 
 TASK RESOURCE
-/*
   $data = parent::toArray($request);
        converts request body to array
 
   $data['status'] = $this->is_done ? 'finished':'open';
-       returns a 'status' field as well as 'is_done' field
-       which stores and displays a text on condition using the content of 'is_done' field
+       returns a 'status' field which stores and displays a text on condition using the content of 'is_done' field
        if is_done is true,status:finished   else,status:open
- */
 
 
 
 
 API ROUTES
-/*
         Route::apiResource('tasks', TaskController::class)->only([
             'index', 'show', 'store', 'update'
         ]);
@@ -205,7 +217,24 @@ API ROUTES
          Route::post('tasks', [TaskController::class, 'store']);
          Route::put('tasks', [TaskController::class, 'update']);
          Route::delete('tasks', [TaskController::class, 'destroy']);
-*/
+
+
+
+ESTABLISHING MODEL RELATIONSHIPS
+Indicating that that the Task model belongsTo the User model
+        $this->belongsTo(User::class, 'creator_id');
+
+     - We added the name of the foreign key when establishing the relationship because
+     - If we didn't do that,
+     - laravel eloquent automatically looks for a foreign key starting with the table's name and id (in this case user_id),
+     - and automatically assumes and makes that field the foreign key
+     - In our case, we created our own foreign key and we want to make that known to laravel's ORM(Eloquent)
+  We add the creator_id to the TaskFactory because we created it as a required field in the task model
+
+
+
+Authorisation and Authentication
+
 
 
 
