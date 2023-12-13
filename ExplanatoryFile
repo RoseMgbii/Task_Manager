@@ -1,3 +1,8 @@
+The youtube video out now 13th December 2023. I'm currently working along with this
+Title: Laravel 10 for REST API
+Link: https://www.youtube.com/watch?v=9FJeoq5z1_Y&t=7663s
+
+
 DIFFERENCE BETWEEN A MODEL AND A MODEL RESOURCE
     - A “model” is used to store data, and perhaps performs some business logics against that data.
     - A “resource model” is used to interact with the database (or maybe other types of persistent data) on behalf of the “model”. The “resource model” actually performs the CRUD operations
@@ -35,7 +40,10 @@ LARAVEL MODEL FACTORY
     - Create the Model Factory and within, indicate the fields you would like to see when creating fake records
     - Go to database (recommended "php artisan tinker")
     - and using the factory method, indicate the number of records you want and then create them
-        (for php tinker use this code Task::factory(50)->create())
+        for php tinker, do this:
+        $task = Task::factory(50)->create() to create 50 dummy records. to create just one, leave an empty bracket egfactory()
+    -To fill specific fields yourself: $task->create(['title'=>'A very good book', 'is_done'=>false])
+
 
 
 
@@ -153,6 +161,11 @@ TASK MODEL
     ];
 
 
+    - The "booted()" function in the Task Model ensures that, after a User has been authenticated,
+        any task created or processed or gotten must possess the user's id as creator id,
+        and not assigned the id of the next user.
+
+
 
 
 
@@ -169,7 +182,6 @@ DELETING TASKS
 
 
 MIGRATIONS
-
 NB: the command "php artisan migrate:fresh" drops all the tables and runs the migrations from the start (removes all data)
 
       $table->boolean('is_done')->default(false);
@@ -229,12 +241,76 @@ Indicating that that the Task model belongsTo the User model
      - laravel eloquent automatically looks for a foreign key starting with the table's name and id (in this case user_id),
      - and automatically assumes and makes that field the foreign key
      - In our case, we created our own foreign key and we want to make that known to laravel's ORM(Eloquent)
-  We add the creator_id to the TaskFactory because we created it as a required field in the task model
+
+  We add the creator_id to the TaskFactory because it is a required field in the task model, and it connects to the User Factory.
+
+  -To reference and fill fields in a model relationship eg, between user and task, in database using tinker:
+          create dummy user:
+              $u = User::factory()->create()
+          reference method used to establish relationship and fill in fields:
+              $u -> tasks() -> create(['title' => 'Buy Hamburgers'])
 
 
 
-Authorisation and Authentication
+AUTHENTICATION
+For this project, we use Laravel Sanctum.
+- If you don't have Sanctum already installed, follow laravel sanctum installation on laravel docs
+- Else, Add this \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class to the 'api' array in your Kernel.php file
+- Then, Create a new controller for your authentication (calling mine: AuthController)
+- Set up a route for that in your API routes file.
+    The route for this is normally a post route, since we will be sending(posting) our details to this controller for authentication
+
+- In the AuthController, we establish a method which we use to accept user request and validate the user details
+    which will usually be sent in the form of a request
+
+Doing this:
+
+    public function login(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        if(!Auth::attempt($validated)){
+            return response()->json(['message' => "Login Information Invalid"], 401);
+        }
+
+        $user = User::where('email', $validated['email'])->first();
+
+        return response()->json([
+            'access_token' => $user->createToken('api_token')->plainTextToken,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+- We value the user details and if valid, we extract and store it
+- Then, we check if the user actually exists in the database and if the credentials are valid before granting access
+- The if statement simply states that if the attempt to login fails, relay a message to the user
+- Else the user exists and so, we get the details of that user from the request,
+    and we return the user's access token to them
+    NB that since the user we are using here is a dummy user created with the UserFactory,
+    the default password for them when requesting access is "password" (check the UserFactory)
 
 
 
+
+PROTECTING THE TASK ROUTE
+- Although we validated and authenticated the task and the user,
+- the task route where requests pass through is still unprotected
+- In order to protect a route, we need to add a route middleware group
+
+- We can use 'auth:sanctum' for that, which is the authentication middleware from laravel
+- We create a middleware using auth:sanctum, make it into a group,
+    and nest all the routes you want accessed only after authentication is proven valid within it
+    Like so:
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('tasks', TaskController::class);
+        });
+
+- And so, when we try to get/post/delete a task and the user or request client has not been verified,
+- It will return "message":"Unauthenticated", indicating that the user trying to send requests to that route is unauthenticated
+    because we are now protecting our route using sanctum
+
+-It will only work (get/post/delete) when we enter the Bearer token as value in the authorisation key within our Header
 
