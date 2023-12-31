@@ -20,9 +20,6 @@ class Task extends Model
       'is_done' => 'boolean'
     ];
 
-    protected $hidden = [
-        'updated_at'
-    ];
 
     public function creator(): BelongsTo
     {
