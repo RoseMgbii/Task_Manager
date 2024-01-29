@@ -111,11 +111,44 @@ LARAVEL MODEL FACTORY
     - They are used to create fake/dummy records you can use to populate your database.
 
     - Create the Model Factory and within, indicate the fields you would like to see when creating fake records
-    - Go to database (recommended "php artisan tinker")
-    - and using the factory method, indicate the number of records you want and then create them
-        for php tinker, do this:
-        $task = Task::factory(50)->create() to create 50 dummy records. to create just one, leave an empty bracket ,   ie, factory()
-    -To fill specific fields yourself: $task->create(['title'=>'A very good book', 'is_done'=>false])
+    (Other) STEP BY STEP
+    - Create the factory for the particular model you want
+        ie: php artisan make:factory TaskFactory --model=Task
+
+   - fill in the attributes you'd like your dummy values to have in the returning array within the definition function
+        ie: 'name' => fake()->name(),
+            'phone_number' => fake()->phoneNumber(),
+            'email' => fake()->unique()->safeEmail(),
+
+   - go to the database seeder and in the run fxn, write the code to create the dummy records
+        ie: Task::factory(5)->create();   this will create 5 dummy records of task attributes (name, email, etc)
+
+   - on the terminal, run your seeder using this command
+        :php artisan db:seed
+        To seed/fill the database with the dummy records using the criteria you gave
+
+
+   TO MAKE SPECIFIC REQUIREMENT
+   - If for example, you want the created_at column of the dummy records to create records
+       which should show as having been created at a specific date,
+
+   For dates we can use CARBON
+   - EG: in the definition fxn within the model factory,
+         $created_at = Carbon::parse('2023-05-10')->setTimestamp('UTC');
+
+                return [
+                    'name' => fake()->name(),
+                    'phone_number' => fake()->phoneNumber(),
+                    'email' => fake()->unique()->safeEmail(),
+                    'created_at' => $created_at,
+
+                ];
+
+   - we used to carbon to show we want the dummy data to have values that start from 2023 october.
+   ('2023-05-10') -> this was a sample to explain how we want it to look like.
+
+   - since the default model migration attribute is '$table->timestamp()', we set the timestamp as utc to address that and use it.
+
 
 
 
