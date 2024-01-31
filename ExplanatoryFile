@@ -132,9 +132,10 @@ LARAVEL MODEL FACTORY
    - If for example, you want the created_at column of the dummy records to create records
        which should show as having been created at a specific date,
 
+USING CARBON IN LARAVEL
    For dates we can use CARBON
    - EG: in the definition fxn within the model factory,
-         $created_at = Carbon::parse('2023-05-10')->setTimestamp('UTC');
+         $created_at = Carbon::parse('2023-05-10')->setTimezone('UTC');
 
                 return [
                     'name' => fake()->name(),
@@ -147,10 +148,21 @@ LARAVEL MODEL FACTORY
    - we used to carbon to show we want the dummy data to have values that start from 2023 october.
    ('2023-05-10') -> this was a sample to explain how we want it to look like.
 
-   - since the default model migration attribute is '$table->timestamp()', we set the timestamp as utc to address that and use it.
+   -By default, Carbon uses the timezone configured in your Laravel application,
+        but you can also specify a different timezone if needed.
 
+OTHER USES OF CARBON
+- Get all tasks created before a specific date
+      $end_date = Carbon::create(2023, 12, 31);
+      $gottenRecords = Task::all()->where('created_at', '<=',$end_date);
+       return response()->json(['message', $gottenRecords]);
 
+       either: Task::all()->where('created_at', '<=',$end_date);    (recommended)
+       or:     Task::where('created_at', '<=', $end_date)->get();
 
+NL2BR
+This makes records start from the next line instead of continuing on the same line and looking messy when displayed
+EG:
 
 CREATING TASK(s)
 *Create and return a task using the request after request has been validated
